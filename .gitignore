@@ -1,0 +1,19 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Env / secrets
+.env
+service-account.json
+*.pem
+*.key
+
+# Python sidecar
+sidecar/venv/
+sidecar/__pycache__/
+sidecar/*.pyc
+
+# OS / editor
+.DS_Store
+.vscode/
+*.swp
