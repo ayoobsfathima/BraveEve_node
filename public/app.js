@@ -45,10 +45,21 @@ async function sendAction(type, payload = {}) {
     return;
   }
   lastError = null;
+  const shouldScrollTop = !currentState || significantChange(currentState, data);
   currentState = data;
   render(currentState);
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
+  if (shouldScrollTop) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  }
+
+  function significantChange(prev, next) {
+    if (prev.screen !== next.screen) return true;
+    if (next.screen === "question_loop") {
+    return prev.sectionIndex !== next.sectionIndex;
+    }
+    return false;
+  }
 
 // ---------------------------------------------------------------------
 // small building blocks
@@ -241,7 +252,7 @@ function screenQuestionLoop(state) {
     return `
       <div class="item-card">
         <div class="item-row">
-          <input type="checkbox" id="chk-${idx}" data-item="${esc(row.item)}" ${row.checked ? "checked" : ""} ${state.awaitingContinue ? "disabled" : ""}/>
+          <input type="checkbox" id="chk-${idx}" data-item="${esc(row.item)}" ${row.checked ? "checked" : ""}/>
           <label for="chk-${idx}"><strong>${esc(row.item)}:</strong> ${esc(row.question)}</label>
         </div>
         <button class="hint-btn" data-hint="${idx}" type="button">💡</button>

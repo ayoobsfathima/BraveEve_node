@@ -156,9 +156,6 @@ export async function applyAction(session, appData, action, payload = {}) {
     }
 
     case 4: {
-      if (!session.explainText) {
-        session.explainText = pickRandom([msg("EXPLAIN_DISTRESS_1"), msg("EXPLAIN_DISTRESS_2")]);
-      }
       if (action === "answer") {
         session.step = payload.value === "yes" ? 5 : 41;
       }
@@ -202,12 +199,6 @@ export async function applyAction(session, appData, action, payload = {}) {
     }
 
     case 6: {
-      if (!session.transitionText) {
-        session.transitionText = personalize(
-          pickRandom([msg("QUESTION_TRANSITION"), msg("QUESTION_TRANSITION_2")]),
-          session.name
-        );
-      }
       if (action === "begin") session.step = 7;
       if (action === "pause") {
         session.pauseStartTime = Date.now();
@@ -220,7 +211,7 @@ export async function applyAction(session, appData, action, payload = {}) {
     case 7: {
       const { sections, sectionItems, itemQuestionNumber, sectionNotesQuestionNumber } = appData;
 
-      if (action === "toggle_check" && !session.awaitingContinue) {
+      if (action === "toggle_check") {
         session.sectionChecks[payload.item] = !!payload.checked;
       }
 
@@ -376,6 +367,9 @@ export function renderState(session, appData) {
       return { ...base, screen: "distress_awareness", message: msg("ASK_DISTRESS_AWARENESS") };
 
     case 4:
+      if (!session.explainText) {
+        session.explainText = pickRandom([msg("EXPLAIN_DISTRESS_1"), msg("EXPLAIN_DISTRESS_2")]);
+      }
       return {
         ...base,
         screen: "distress_explain",
@@ -400,6 +394,12 @@ export function renderState(session, appData) {
       return { ...base, screen: "score_response", text: session.scoreReply };
 
     case 6:
+      if (!session.transitionText) {
+        session.transitionText = personalize(
+          pickRandom([msg("QUESTION_TRANSITION"), msg("QUESTION_TRANSITION_2")]),
+          session.name
+        );
+      }
       return { ...base, screen: "question_transition", text: session.transitionText };
 
     case 7: {
