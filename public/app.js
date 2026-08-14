@@ -51,15 +51,18 @@ async function sendAction(type, payload = {}) {
   if (shouldScrollTop) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  }
+}
 
-  function significantChange(prev, next) {
-    if (prev.screen !== next.screen) return true;
-    if (next.screen === "question_loop") {
+// True when the new state represents a genuinely new "page" the user should
+// see from the top (a different screen, a new section, or the note-response
+// card appearing) — as opposed to an in-place tweak like ticking a checkbox.
+function significantChange(prev, next) {
+  if (prev.screen !== next.screen) return true;
+  if (next.screen === "question_loop") {
     return prev.sectionIndex !== next.sectionIndex;
-    }
-    return false;
   }
+  return false;
+}
 
 // ---------------------------------------------------------------------
 // small building blocks
@@ -197,17 +200,34 @@ function screenDistressReexplain(state) {
   if (helpBtn) helpBtn.onclick = () => sendAction("help_continue");
 }
 
+const SCORE_BAND_COLORS = { low: "#4caf7d", moderate: "#e0a531", high: "#e0574a" };
+
+function bandForScore(score) {
+  if (score <= 3) return "low";
+  if (score <= 6) return "moderate";
+  return "high";
+}
+
 function screenDistressScore(state) {
   root.innerHTML = `
     ${errorBanner()}
     <p>${esc(state.message)}</p>
     <div class="score-value" id="score-display">5</div>
-    <input type="range" min="0" max="10" value="5" id="score-slider" />
+    <input type="range" min="0" max="10" value="5" id="score-slider" class="distress-slider" />
+    <div class="score-anchors">
+      <span>No distress</span>
+      <span>Extreme distress</span>
+    </div>
     <div class="btn-row"><button class="pill" id="continue-btn">Continue</button></div>
   `;
   const slider = document.getElementById("score-slider");
   const display = document.getElementById("score-display");
-  slider.addEventListener("input", () => { display.textContent = slider.value; });
+  const updateColor = () => {
+    display.textContent = slider.value;
+    display.style.color = SCORE_BAND_COLORS[bandForScore(Number(slider.value))];
+  };
+  updateColor();
+  slider.addEventListener("input", updateColor);
   document.getElementById("continue-btn").onclick = () => sendAction("submit_score", { score: Number(slider.value) });
 }
 
@@ -352,6 +372,39 @@ function screenResume(state) {
   document.getElementById("continue-btn").onclick = () => sendAction("continue");
 }
 
+function summaryCard(summary) {
+  if (!summary) return "";
+  const band = summary.scoreBand;
+  const bandColor = band ? SCORE_BAND_COLORS[band.key] : "#999";
+
+  const sectionsHtml = summary.sections.map((s) => {
+    const hasItems = s.items && s.items.length > 0;
+    return `
+      <div class="summary-section">
+        <div class="summary-section-name">${esc(s.name)}</div>
+        ${hasItems
+          ? `<ul class="summary-item-list">${s.items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`
+          : `<div class="summary-empty">No concerns noted here today.</div>`
+        }
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="summary-card">
+      <div class="summary-title">A quick look back at today</div>
+      ${summary.distressScore !== null ? `
+        <div class="summary-score-row">
+          <div class="summary-score-value" style="color:${bandColor}">${summary.distressScore}<span class="summary-score-max">/10</span></div>
+          <div class="summary-score-band" style="background:${bandColor}22;color:${bandColor}">${esc(band ? band.label : "")} distress</div>
+        </div>
+        ${summary.scoreReflection ? `<div class="summary-score-reflection">${esc(summary.scoreReflection)}</div>` : ""}
+      ` : ""}
+      <div class="summary-sections">${sectionsHtml}</div>
+    </div>
+  `;
+}
+
 function screenEnd(state) {
   root.innerHTML = `
     ${errorBanner()}
@@ -359,6 +412,7 @@ function screenEnd(state) {
     ${card({ text: state.endMessage, mascot: "BraveEve_thank_you", side: "right", cardColor: "#fff8fb" })}
     <div class="mascot-center"><img src="${mascotSrc("heart_bubble")}" width="55" onerror="this.style.display='none'"/></div>
     ${state.showDistressAlert ? `<div class="alert-warning">${esc(state.distressAlert)}</div>` : ""}
+    ${summaryCard(state.summary)}
     <hr class="divider"/>
     <div class="caption">${esc(state.disclaimer)}</div>
   `;

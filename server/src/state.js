@@ -42,6 +42,7 @@ export function createSession(appData) {
     scoreReply: "",
     sectionIndex: 0,
     sectionChecks: {},
+    sectionSummaries: {}, // sectionName -> array of checked item names, captured as each section finishes (for the end-of-session summary card)
     notePromptOrder: shuffled(NOTES_BOX_PROMPTS),
     awaitingContinue: false,
     pendingMessage: "",
@@ -58,6 +59,13 @@ export function createSession(appData) {
 
 export function getSession(sessionId) {
   return sessions.get(sessionId);
+}
+
+function scoreBand(score) {
+  if (score === null || score === undefined) return null;
+  if (score <= 3) return { key: "low", label: "Low" };
+  if (score <= 6) return { key: "moderate", label: "Moderate" };
+  return { key: "high", label: "High" };
 }
 
 function computeDuration(session) {
@@ -89,6 +97,14 @@ function makeEntry(session, { questionNumber, category, problemItem, answer, sou
     session_duration_seconds: seconds,
     session_duration_minutes: minutes,
   };
+}
+
+function captureSectionSummary(session, appData) {
+  const sectionName = appData.sections[session.sectionIndex];
+  const items = appData.sectionItems[sectionName];
+  session.sectionSummaries[sectionName] = items
+    .filter((row) => !!session.sectionChecks[row.item])
+    .map((row) => row.item);
 }
 
 async function persist(entries) {
@@ -229,11 +245,13 @@ export async function applyAction(session, appData, action, payload = {}) {
       }
 
       if (action === "stop") {
+        captureSectionSummary(session, appData);
         session.step = 999;
         break;
       }
 
       if (action === "continue_after_note" && session.awaitingContinue) {
+        captureSectionSummary(session, appData);
         session.awaitingContinue = false;
         session.pendingMessage = "";
         session.sectionChecks = {};
@@ -288,6 +306,7 @@ export async function applyAction(session, appData, action, payload = {}) {
           session.pendingMessage = personalize(pickRandom(bank), session.name);
           session.awaitingContinue = true;
         } else {
+          captureSectionSummary(session, appData);
           session.sectionChecks = {};
           session.sectionIndex += 1;
           if (session.sectionIndex >= sections.length) session.step = 999;
@@ -458,6 +477,12 @@ export function renderState(session, appData) {
         session.closingAcknowledgment = personalize(pickRandom(CLOSING_ACKNOWLEDGMENTS), session.name);
         session.endMessage = personalize(pickRandom([msg("END_MESSAGE"), msg("END_MESSAGE_2")]), session.name);
       }
+
+      const summarySections = sections.map((name) => ({
+        name,
+        items: session.sectionSummaries[name] || [],
+      }));
+
       return {
         ...base,
         screen: "end",
@@ -466,6 +491,12 @@ export function renderState(session, appData) {
         showDistressAlert: session.distressScore !== null && session.distressScore >= 4,
         distressAlert: msg("DISTRESS_ALERT"),
         disclaimer: msg("DISCLAIMER"),
+        summary: {
+          distressScore: session.distressScore,
+          scoreBand: scoreBand(session.distressScore),
+          scoreReflection: session.scoreReply,
+          sections: summarySections,
+        },
       };
     }
 
