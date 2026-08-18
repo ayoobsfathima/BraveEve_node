@@ -1,0 +1,28 @@
+﻿Key,Message
+ASK_NAME,ಇವತ್ತು ನಿಮ್ಮನ್ನು meet ಮಾಡಿ ಖುಷಿ ಆಯ್ತು. ನಾನು ನಿಮ್ಮನ್ನ ಏನು ಕರೆಯಬೇಕು ಅಂತ ನೀವು ಇಷ್ಟಪಡ್ತೀರಾ?
+ASK_DAY_FEELING,"ಮುಂದುವರಿಯುವ ಮೊದಲು, ನೀವು ಇವತ್ತು ಹೇಗೆ feel ಮಾಡ್ತಿದ್ದೀರಿ?"
+DAY_FEELING_GOOD,ಅದನ್ನ ಕೇಳಿ ನನಗೆ ಖುಷಿ ಆಯ್ತು. Share ಮಾಡಿದ್ದಕ್ಕೆ thank you.
+DAY_FEELING_OKAY,ಹೇಳಿದ್ರಕ್ಕೆ Thank you. ಅದನ್ನ ನನ್ನ ಜೊತೆ share ಮಾಡಿದ್ದಕ್ಕೆ thanks.
+DAY_FEELING_STRUGGLE,"Honest ಆಗಿ ಮಾತಾಡಿದ್ದಕ್ಕೆ thank you. ಕೆಲವು ದಿನಗಳು ಬೇರೆ ದಿನಗಳಿಗಿಂತ harder ಅನಿಸಬಹುದು, ಅದು okay."
+ASK_DISTRESS_AWARENESS,"""Distress"" ಅನ್ನೋ word ನೀವು ಮೊದಲು ಕೇಳಿದ್ದೀರಾ?"
+EXPLAIN_DISTRESS_1,"Cancer and treatment ಕೆಲವೊಮ್ಮೆ body, mind, emotions, daily life, relationships, ಇಲ್ಲ faith ಮೇಲೂ ಕೂಡ affect ಮಾಡಬಹುದು. ನಾವು ಈ feelings-ನ distress ಅಂತ ಕರೀತೀವಿ."
+EXPLAIN_DISTRESS_2,"Cancer and treatment ಕೆಲವೊಮ್ಮೆ body, mind, emotions, daily life, relationships, ಇಲ್ಲ faith ಮೇಲೂ ಕೂಡ affect ಮಾಡಬಹುದು. ನಾವು ಈ feelings-ನ distress ಅಂತ ಕರೀತೀವಿ."
+DISTRESS_UNDERSTOOD,ನಿಮಗೆ meaning ಅರ್ಥ ಆಯ್ತಾ?
+DISTRESS_REEXPLAIN,"Distress ಬಗ್ಗೆ ಯೋಚಿಸೋಕೆ ಇನ್ನೊಂದು way ಇದೆ: ಏನಾದ್ರೂ ನಿಮ್ಮ days-ನ harder, more tiring, more worrying, or less enjoyable ಮಾಡುತ್ತಿದ್ರೆ, ಅದು distress ಆಗಿರಬಹುದು."
+DISTRESS_REEXPLAIN_CHECK,ಈಗ ನಿಮಗೆ ಅರ್ಥ ಆಯ್ತಾ?
+DISTRESS_NOT_UNDERSTOOD_HELP,"Parvagilla. ತುಂಬಾ ಜನ ಈ word-ನ ಮೊದಲು ಕೇಳಿರಲಿಲ್ಲ. ನಿಮಗೆ distress ಅಂದ್ರೆ ಏನು ಅಂತ ಇನ್ನೂ clear ಆಗಿಲ್ಲ ಅಂದ್ರೆ, ದಯವಿಟ್ಟು ನಿಮ್ಮ doctor, nurse, counsellor, ಅಥವಾ ನಿಮ್ಮ healthcare team-ನ ಬೇರೆ ಯಾರ ಜೊತೆನಾದ್ರೂ ಮಾತಾಡಿ. ಅವರು ನಿಮಗೆ ಅರ್ಥವಾಗುವ ರೀತಿಯಲ್ಲಿ explain ಮಾಡೋಕೆ help ಮಾಡಬಹುದು."
+ASK_DISTRESS_SCORE,"ಕಳೆದ week-ನ, ಇವತ್ತಿನದ್ದನ್ನೂ ಸೇರಿಸಿ,  ಯೋಚನೆ ಮಾಡಿ. ನೀವು ಎಷ್ಟು distress feel ಮಾಡ್ತಿದ್ರಿ? 0 to 10-ರ ನಡುವೆ ಒಂದು number choose ಮಾಡಿ. 0 score ಅಂದ್ರೆ ಯಾವುದೇ distress ಇಲ್ಲ ಅಂತ ಅರ್ಥ. 10 score ಅಂದ್ರೆ ನೀವು imagine ಮಾಡಬಹುದಾದ highest distress ಅಂತ ಅರ್ಥ. ನಿಮ್ಮ distress ಜಾಸ್ತಿ ಆಗ್ತಾ ಹೋದ ಹಾಗೆ, number ಕೂಡ ಜಾಸ್ತಿ ಆಗುತ್ತೆ. ನೀವು ಹೇಗೆ feel ಮಾಡ್ತಿದ್ದೀರಿ ಅನ್ನೋದಕ್ಕೆ best match ಆಗೋ number-ನ choose ಮಾಡಿ."
+SCORE_RESPONSE_LOW,ಅದನ್ನ share ಮಾಡಿದ್ದಕ್ಕೆ thank you. ಈಗ things ಸ್ವಲ್ಪ easy ಆಗಿರೋ ಹಾಗೆ ಕಾಣುತ್ತೆ.
+SCORE_RESPONSE_LOW_2,ನೀವು ನನಗೆ ಹೇಳಿದ್ದಕ್ಕೆ ಧನ್ಯವಾದಗಳು. ನೀವು ಈಗ fairly well manage ಮಾಡ್ತಾ ಇದ್ದೀರಿ ಅಂತ ಕಾಣುತ್ತೆ.
+SCORE_RESPONSE_MODERATE,ಅದನ್ನ share ಮಾಡಿದ್ದಕ್ಕೆ thank you. ನಿಮ್ಮ ಮನಸ್ಸಿನಲ್ಲಿ ಈಗ ಒಂದಷ್ಟು ವಿಷಯಗಳು ಇರೋ ತರ ಕಾಣ್ತಿದೆ.
+SCORE_RESPONSE_MODERATE_2,ನಿಮ್ಮ honesty-ಗೆ ನಾನು appreciate ಮಾಡ್ತೀನಿ. ಕೆಲವು challenges ಇಂದ lately things ಸ್ವಲ್ಪ difficult ಆಗ್ತಾ ಇದೆ ಅಂತ ಕಾಣುತ್ತೆ.
+SCORE_RESPONSE_HIGH,ನನ್ನ ಜೊತೆ open ಆಗಿ ಮಾತಾಡಿದ್ದಕ್ಕೆ thank you. ಈಗ things ಸ್ವಲ್ಪ heavy feel ಆಗ್ತಿದೆ ಅಂತ ಅನ್ಸುತ್ತೆ.
+SCORE_RESPONSE_HIGH_2,ಅದನ್ನ share ಮಾಡಿದ್ದಕ್ಕೆ thanks. ನೀವು ಈಗ ತುಂಬಾ सामान carry ಮಾಡ್ತಾ ಇರೋ ತರ ಕಾಣ್ತಿದೆ.
+QUESTION_TRANSITION,ಅದನ್ನ share ಮಾಡಿದ್ದಕ್ಕೆ thank you [Name]. ಈ feelings-ಗೆ ಏನು contribute ಆಗ್ತಿದೆ ಅಂತ better understand ಮಾಡ್ಕೊಳ್ಳೋಕೆ ನಾನು ಈಗ ಕೆಲವು questions ಕೇಳ್ತೀನಿ. ಯಾವುದೇ right or wrong answers ಇಲ್ಲ. ನಿಮಗೆ true ಅನಿಸೋದನ್ನ just share ಮಾಡಿ.
+QUESTION_TRANSITION_2,"Thank you, [Name]. ನಿಮ್ಮ life-ನ different parts ಬಗ್ಗೆ gently ಕೆಲವು questions ಕೇಳೋಕೆ ಇಷ್ಟಪಡ್ತೀನಿ, so that ನಾನು ನಿಮ್ಮ feelings-ನ better understand ಮಾಡ್ಕೊಳ್ತೀನಿ."
+PAUSE_MESSAGE,ಅದು completely fine. ನಾವು ಇಲ್ಲೀಗ ಇಲ್ಲಿ pause ಮಾಡಬಹುದು. ನೀವು continue ಮಾಡೋಕೆ ready ಆದಾಗ ನಾನು ಇಲ್ಲೇ ಇರ್ತೀನಿ.
+RESUME_MESSAGE,"Welcome back, [Name]. ನಾವು ಎಲ್ಲಿ ಬಿಟ್ಟಿದ್ವಿ ಅಲ್ಲಿಂದ continue ಮಾಡೋಣ."
+END_MESSAGE,ಇವತ್ತು ನನ್ನ ಜೊತೆ ಈ time spend ಮಾಡಿದ್ದಕ್ಕೆ thank you [Name].
+END_MESSAGE_2,"[Name], ಇವತ್ತು ನಿಮ್ಮ thoughts and feelings-ನ ನನ್ನ ಜೊತೆ share ಮಾಡಿದ್ದಕ್ಕೆ thanks. ನಿಮ್ಮ openness-ಗೆ thank you."
+DISTRESS_ALERT,"ನೀವು earlier share ಮಾಡಿದ್ದ distress score ನೋಡಿದ್ರೆ, things ಈಗ ಸ್ವಲ್ಪ difficult ಇದೆ ಅಂತ ಅನ್ಸುತ್ತೆ. ನಿಮಗೆ extra support ಬೇಕಿದ್ರೆ, ನೀವು ನಿಮ್ಮ doctor, nurse, counsellor, ಅಥವಾ ನಿಮ್ಮ healthcare team-ನ ಬೇರೆ ಯಾರ ಜೊತೆನಾದ್ರೂ ಮಾತಾಡಬಹುದು."
+DISCLAIMER,ಈ conversation check-ins ಮತ್ತು reflection-ಗೆ support ಮಾಡೋದಕ್ಕೆ design ಮಾಡಲಾಗಿದೆ. ಇದು medical advice ಅಥವಾ emergency care-ಗೆ substitute ಅಲ್ಲ.

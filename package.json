@@ -5,8 +5,9 @@
   "type": "module",
   "main": "server/src/server.js",
   "scripts": {
-    "start": "node server/src/server.js",
-    "dev": "node --watch server/src/server.js"
+  "start": "node server/src/server.js",
+  "dev": "node --watch server/src/server.js",
+  "translate:kn": "node scripts/translate_to_kannada.js"
   },
   "dependencies": {
     "csv-parse": "^5.5.6",
