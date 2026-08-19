@@ -45,12 +45,18 @@ async function sendAction(type, payload = {}) {
     return;
   }
   lastError = null;
-  const shouldScrollTop = !currentState || significantChange(currentState, data);
+  const shouldScrollTop = type === "back" || !currentState || significantChange(currentState, data);
   currentState = data;
   render(currentState);
   if (shouldScrollTop) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+}
+
+// Small, deliberately understated link — Back is a secondary action and
+// shouldn't visually compete with the primary choice on each screen.
+function backLink() {
+  return `<button class="back-link" id="back-btn">← Back</button>`;
 }
 
 // True when the new state represents a genuinely new "page" the user should
@@ -113,6 +119,7 @@ function screenName(state) {
 function screenNameAffirmation(state) {
   root.innerHTML = `
     ${errorBanner()}
+    ${backLink()}
     ${card({ text: state.text, mascot: "BraveEve_grateful", side: "right", cardColor: "#fff5f8" })}
     <div class="btn-row"><button class="pill" id="next-btn">Next</button></div>
   `;
@@ -122,6 +129,7 @@ function screenNameAffirmation(state) {
 function screenDayFeeling(state) {
   root.innerHTML = `
     ${errorBanner()}
+    ${backLink()}
     <p>${esc(state.message)}</p>
     <div class="radio-group" id="day-options">
       ${state.options.map((o, i) => `
@@ -139,6 +147,7 @@ function screenDayFeeling(state) {
 function screenDayFeelingResponse(state) {
   root.innerHTML = `
     ${errorBanner()}
+    ${backLink()}
     ${card({ text: state.text, mascot: "BraveEve_proud", side: "right" })}
     <div class="btn-row"><button class="pill" id="continue-btn">Continue</button></div>
   `;
@@ -148,6 +157,7 @@ function screenDayFeelingResponse(state) {
 function yesNoScreen({ text, mascot, side, cardColor, question }, onAnswer) {
   root.innerHTML = `
     ${errorBanner()}
+    ${backLink()}
     ${card({ text, mascot, side, cardColor })}
     ${question ? `<p>${esc(question)}</p>` : ""}
     <div class="btn-row two">
@@ -169,6 +179,7 @@ function screenDistressAwareness(state) {
 function screenDistressExplain(state) {
   root.innerHTML = `
     ${errorBanner()}
+    ${backLink()}
     ${card({ text: state.text, mascot: "BraveEve_pointing_up", side: "right", cardColor: "#faf6ff" })}
     <p>${esc(state.question)}</p>
     <div class="btn-row two">
@@ -183,6 +194,7 @@ function screenDistressExplain(state) {
 function screenDistressReexplain(state) {
   root.innerHTML = `
     ${errorBanner()}
+    ${backLink()}
     ${card({ text: state.text, mascot: "BraveEve_pointing_up", side: "left", cardColor: "#feedfd" })}
     <p>${esc(state.question)}</p>
     <div class="btn-row two">
@@ -211,6 +223,7 @@ function bandForScore(score) {
 function screenDistressScore(state) {
   root.innerHTML = `
     ${errorBanner()}
+    ${backLink()}
     <p>${esc(state.message)}</p>
     <div class="score-value" id="score-display">5</div>
     <input type="range" min="0" max="10" value="5" id="score-slider" class="distress-slider" />
@@ -234,6 +247,7 @@ function screenDistressScore(state) {
 function screenScoreResponse(state) {
   root.innerHTML = `
     ${errorBanner()}
+    ${backLink()}
     <div class="note-box">${esc(state.text)}</div>
     <div class="btn-row"><button class="pill" id="continue-btn">Continue</button></div>
   `;
@@ -243,6 +257,7 @@ function screenScoreResponse(state) {
 function screenQuestionTransition(state) {
   root.innerHTML = `
     ${errorBanner()}
+    ${backLink()}
     ${card({ text: state.text, mascot: "BraveEve_few_questions", side: "right", cardColor: "#faf6ff" })}
     <div class="btn-row three">
       <button class="pill" id="begin-btn">Begin</button>
@@ -284,6 +299,7 @@ function screenQuestionLoop(state) {
 
   root.innerHTML = `
     ${errorBanner()}
+    ${backLink()}
     <div class="section-header">
       <span class="section-badge">${esc(state.sectionName)}</span>
       ${mascotHtml}
@@ -307,10 +323,7 @@ function screenQuestionLoop(state) {
       <div class="note-box">${esc(state.pendingMessage)}</div>
       <div class="btn-row"><button class="pill" id="continue-note-btn">${state.isLastSection ? "Finish" : "Continue"}</button></div>
     ` : `
-      <div class="btn-row two">
-        ${state.sectionIndex > 0 ? `<button class="pill secondary" id="back-btn">Back</button>` : `<div></div>`}
-        <button class="pill" id="next-btn">${state.isLastSection ? "Finish" : "Next"}</button>
-      </div>
+      <div class="btn-row"><button class="pill" id="next-btn">${state.isLastSection ? "Finish" : "Next"}</button></div>
     `}
 
     <hr class="divider"/>
@@ -331,9 +344,6 @@ function screenQuestionLoop(state) {
       document.getElementById(`hint-${btn.dataset.hint}`).classList.toggle("open");
     });
   });
-
-  const backBtn = document.getElementById("back-btn");
-  if (backBtn) backBtn.onclick = () => sendAction("back");
 
   const nextBtn = document.getElementById("next-btn");
   if (nextBtn) {
@@ -446,6 +456,9 @@ function render(state) {
     return;
   }
   fn(state);
+
+  const backBtn = document.getElementById("back-btn");
+  if (backBtn) backBtn.onclick = () => sendAction("back");
 }
 
 // ---------------------------------------------------------------------

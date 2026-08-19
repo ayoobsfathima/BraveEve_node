@@ -51,6 +51,7 @@ export function createSession(appData) {
     sessionStartTime: null,
     pauseStartTime: null,
     totalPausedSeconds: 0,
+    history: [], // stack of prior session snapshots, for the "Back" action
   };
 
   sessions.set(sessionId, session);
@@ -107,6 +108,14 @@ function captureSectionSummary(session, appData) {
     .map((row) => row.item);
 }
 
+const MAX_HISTORY = 100;
+
+/** Deep clone of everything in the session except the history stack itself. */
+function snapshotSession(session) {
+  const { history, ...rest } = session;
+  return JSON.parse(JSON.stringify(rest));
+}
+
 async function persist(entries) {
   if (!entries || entries.length === 0) return;
   try {
@@ -126,6 +135,25 @@ async function persist(entries) {
 export async function applyAction(session, appData, action, payload = {}) {
   const { staticMessages } = appData;
   const msg = (key) => getMessage(appData, key);
+
+  // "Back" restores the session to exactly how it was right before the
+  // previous action ran — including any answers/checks that were entered,
+  // not just moving the step pointer. Works from any screen, uniformly.
+  if (action === "back") {
+    if (session.history.length > 0) {
+      const previous = session.history.pop();
+      Object.assign(session, previous);
+    }
+    return { ok: true };
+  }
+
+  // Snapshot state before applying this action (skip for toggle_check,
+  // which is many small in-place edits within the same screen, not a
+  // screen-to-screen transition worth being able to undo one-by-one).
+  if (action !== "toggle_check") {
+    session.history.push(snapshotSession(session));
+    if (session.history.length > MAX_HISTORY) session.history.shift();
+  }
 
   switch (session.step) {
     case 0: {
@@ -229,13 +257,6 @@ export async function applyAction(session, appData, action, payload = {}) {
 
       if (action === "toggle_check") {
         session.sectionChecks[payload.item] = !!payload.checked;
-      }
-
-      if (action === "back" && !session.awaitingContinue) {
-        if (session.sectionIndex > 0) {
-          session.sectionIndex -= 1;
-          session.sectionChecks = {};
-        }
       }
 
       if (action === "pause") {
