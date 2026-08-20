@@ -408,7 +408,6 @@ function summaryCard(summary) {
       ${summary.distressScore !== null ? `
         <div class="summary-score-row">
           <div class="summary-score-value" style="color:${bandColor}">${summary.distressScore}<span class="summary-score-max">/10</span></div>
-          <div class="summary-score-band" style="background:${bandColor}22;color:${bandColor}">${esc(band ? band.label : "")} distress</div>
         </div>
         ${summary.scoreReflection ? `<div class="summary-score-reflection">${esc(summary.scoreReflection)}</div>` : ""}
       ` : ""}

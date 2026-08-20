@@ -277,7 +277,8 @@ input[type="range"] { width: 100%; }
 }
 .section-hint {
   font-size: 15px;
-  color: #666;
+  font-weight: 600;
+  color: #000;
   margin-bottom: 12px;
 }
 
@@ -505,13 +506,6 @@ input[type="range"].distress-slider::-moz-range-thumb {
   font-size: 18px;
   font-weight: 500;
   color: var(--muted);
-}
-
-.summary-score-band {
-  font-size: 13px;
-  font-weight: 600;
-  padding: 4px 12px;
-  border-radius: 20px;
 }
 
 .summary-score-reflection {
