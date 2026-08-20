@@ -4,17 +4,93 @@
   --pink-light: #f8dce6;
   --text: #333333;
   --muted: #7a6a72;
+
+  /* ambient background wash — same warm family as --pink, nothing new */
+  --cream: #fdf6ef;
+  --blush-mist: #fbe8ee;
+  --sage-whisper: #eef2ea;
 }
 
 * { box-sizing: border-box; }
 
+html {
+  background: var(--cream);
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: #fffaf9;
+  background: transparent;
   color: var(--text);
   font-size: 18px;
   line-height: 1.5;
+  position: relative;
+}
+
+/* Ambient gradient wash: soft, blurred glows in the existing palette,
+   fixed behind all content. Deliberately understated — texture and depth
+   instead of a flat fill, not a "look at me" pattern. */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse 60% 45% at 12% -5%, var(--blush-mist) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 50% at 100% 15%, var(--sage-whisper) 0%, transparent 55%),
+    radial-gradient(ellipse 65% 55% at 85% 105%, var(--pink-light) 0%, transparent 60%),
+    var(--cream);
+  animation: ambient-drift 50s ease-in-out infinite alternate;
+}
+
+@keyframes ambient-drift {
+  0% { background-position: 0% 0%, 0% 0%, 0% 0%; }
+  100% { background-position: 2% 3%, -3% 2%, -2% -3%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+}
+
+/* Faint botanical accents in far corners — brand-specific, but so low
+   opacity they read as texture, not imagery competing with the content. */
+#bg-decor {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-bloom {
+  position: absolute;
+  opacity: 0.1;
+  filter: saturate(0.7) blur(0.5px);
+}
+
+.bg-bloom--daisy {
+  width: 260px;
+  top: -60px;
+  right: -50px;
+  transform: rotate(12deg);
+}
+
+.bg-bloom--bud {
+  width: 220px;
+  bottom: -40px;
+  left: -60px;
+  transform: rotate(-18deg) scaleX(-1);
+}
+
+@media (max-width: 600px) {
+  .bg-bloom--daisy { width: 170px; top: -35px; right: -45px; }
+  .bg-bloom--bud { width: 150px; bottom: -25px; left: -45px; }
 }
 
 #app-shell {
@@ -28,6 +104,16 @@ body {
   color: var(--muted);
   font-size: 18px;
   margin: 4px 0 16px;
+}
+
+.logo-mark {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+}
+.logo-mark img {
+  width: min(280px, 70%);
+  height: auto;
 }
 
 .header-title {
@@ -47,7 +133,8 @@ hr.divider {
   background: #fff;
   padding: 25px;
   border-radius: 18px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(200, 90, 132, 0.08);
+  box-shadow: 0 8px 24px -8px rgba(180, 74, 114, 0.18);
   margin-bottom: 20px;
   overflow: visible;
 }
@@ -56,6 +143,8 @@ hr.divider {
   color: var(--pink);
   margin: 0 0 15px;
 }
+.card h2.pad-right { padding-right: 110px; }
+.card h2.pad-left { padding-left: 110px; }
 
 .card .card-text {
   font-size: 18px;
@@ -193,11 +282,13 @@ input[type="range"] { width: 100%; }
 }
 
 .item-card {
-  border: 1px solid #eee;
+  background: #fff;
+  border: 1px solid rgba(200, 90, 132, 0.1);
   border-radius: 12px;
   padding: 14px 16px;
   margin-bottom: 10px;
   position: relative;
+  box-shadow: 0 2px 8px -4px rgba(180, 74, 114, 0.12);
 }
 
 .item-row {
@@ -383,11 +474,11 @@ input[type="range"].distress-slider::-moz-range-thumb {
 
 .summary-card {
   background: #fff;
-  border: 1px solid #f1e0e7;
+  border: 1px solid rgba(200, 90, 132, 0.08);
   border-radius: 18px;
   padding: 22px 24px;
   margin: 16px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 24px -8px rgba(180, 74, 114, 0.14);
 }
 
 .summary-title {

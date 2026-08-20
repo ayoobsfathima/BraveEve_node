@@ -79,7 +79,7 @@ function card({ text, mascot, title, side = "right", cardColor = "#fff", extraCl
   const mascotHtml = mascot
     ? `<img class="card-mascot ${side}" src="${mascotSrc(mascot)}" onerror="this.style.display='none'"/>`
     : "";
-  const titleHtml = title ? `<h2>${esc(title)}</h2>` : "";
+  const titleHtml = title ? `<h2 class="${mascot ? padClass : ""}">${esc(title)}</h2>` : "";
   return `
     <div class="card ${extraClass}" style="background:${cardColor}">
       ${mascotHtml}
@@ -100,7 +100,9 @@ function errorBanner() {
 
 function screenName(state) {
   root.innerHTML = `
-    <img src="${mascotSrc("header")}" style="width:100%;border-radius:12px;margin-bottom:6px" onerror="this.style.display='none'"/>
+    <div class="logo-mark">
+      <img src="${mascotSrc("header")}" alt="BraveEve" onerror="this.style.display='none'"/>
+    </div>
     <p class="header-sub">A supportive check-in tool for women receiving cancer care</p>
     <hr class="divider"/>
     ${errorBanner()}
