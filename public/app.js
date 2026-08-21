@@ -59,6 +59,7 @@ const UI_STRINGS = {
     noExample: "No example is available for this item.",
     noConcerns: "No concerns noted here today.",
     quickLookBack: "A quick look back at today",
+    startOver: "Start a new check-in",
     headerSubtitle: "A supportive check-in tool for women receiving cancer care",
     helloImBraveEve: "🌸 Hello! I'm BraveEve",
     reassurance: (name) =>
@@ -92,6 +93,7 @@ const UI_STRINGS = {
     noExample: "ಈ ವಿಷಯಕ್ಕೆ ಯಾವುದೇ ಉದಾಹರಣೆ ಲಭ್ಯವಿಲ್ಲ.",
     noConcerns: "ಇಂದು ಇಲ್ಲಿ ಯಾವುದೇ ಕಾಳಜಿಗಳು ಕಂಡುಬಂದಿಲ್ಲ.",
     quickLookBack: "ಇಂದಿನ ಒಂದು ಸಣ್ಣ ಹಿನ್ನೋಟ",
+    startOver: "ಹೊಸ ಪರಿಶೀಲನೆ ಪ್ರಾರಂಭಿಸಿ",
     headerSubtitle: "ಕ್ಯಾನ್ಸರ್ ಆರೈಕೆ ಪಡೆಯುತ್ತಿರುವ ಮಹಿಳೆಯರಿಗಾಗಿ ಒಂದು ಬೆಂಬಲ ಪರಿಶೀಲನಾ ಸಾಧನ",
     helloImBraveEve: "🌸 ನಮಸ್ಕಾರ! ನಾನು BraveEve",
     reassurance: (name) =>
@@ -641,7 +643,17 @@ function screenEnd(state) {
     ${summaryCard(state.summary, state.name)}
     <hr class="divider"/>
     <div class="caption">${esc(state.disclaimer)}</div>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="pill secondary" id="start-over-btn">${esc(t("startOver"))}</button>
+    </div>
   `;
+  document.getElementById("start-over-btn").onclick = async () => {
+    localStorage.removeItem("braveeve_session_id");
+    const freshState = await startSession();
+    currentState = freshState;
+    render(freshState);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 }
 
 // ---------------------------------------------------------------------
