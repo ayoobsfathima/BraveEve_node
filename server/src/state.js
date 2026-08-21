@@ -81,7 +81,7 @@ function computeDuration(session) {
 }
 
 /** Builds one response row, matching the columns written in chatbot.py */
-function makeEntry(session, { questionNumber, category, problemItem, answer, source, freeText }) {
+function makeEntry(session, { questionNumber, category, problemItem, answer, source, freeText, nativeText }) {
   const { seconds, minutes } = computeDuration(session);
   return {
     session_id: session.sessionId,
@@ -94,6 +94,7 @@ function makeEntry(session, { questionNumber, category, problemItem, answer, sou
     answer,
     response_source: source,
     free_text: freeText || "",
+    native_text: nativeText || "", // spoken-language transcript, if this note came from voice
     completed_at: fmtDateTime(new Date()),
     session_duration_seconds: seconds,
     session_duration_minutes: minutes,
@@ -300,6 +301,7 @@ export async function applyAction(session, appData, action, payload = {}) {
         }
 
         const noteText = (payload.note || "").trim();
+        const nativeNoteText = (payload.nativeNote || "").trim();
         let prediction = "";
         if (noteText !== "") {
           const result = await classifyNote(noteText);
@@ -314,6 +316,7 @@ export async function applyAction(session, appData, action, payload = {}) {
             answer: prediction,
             source: noteText !== "" ? "NLP" : "NONE",
             freeText: noteText,
+            nativeText: nativeNoteText,
           })
         );
 

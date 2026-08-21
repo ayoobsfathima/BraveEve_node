@@ -2,6 +2,15 @@ const root = document.getElementById("app");
 let currentState = null;
 let lastError = null;
 
+// Voice notes: the native-language transcript isn't reflected anywhere in
+// the visible DOM (only the English text goes in the textarea), so it's
+// tracked here as a side-channel and sent along with the "next" action.
+// Reset whenever the person moves to a different section.
+let pendingNativeText = "";
+let lastVoiceSectionIndex = null;
+let activeRecorder = null;
+let recordingTimer = null;
+
 const MASCOT_DIR = "/images";
 
 function mascotSrc(name) {
@@ -273,6 +282,11 @@ function screenQuestionTransition(state) {
 }
 
 function screenQuestionLoop(state) {
+  if (state.sectionIndex !== lastVoiceSectionIndex) {
+    pendingNativeText = "";
+    lastVoiceSectionIndex = state.sectionIndex;
+  }
+
   const mascotHtml = state.sectionMascot
     ? `<img src="${mascotSrc(state.sectionMascot)}" onerror="this.style.display='none'"/>`
     : "";
@@ -299,6 +313,8 @@ function screenQuestionLoop(state) {
     `;
   }).join("");
 
+  const voiceSupported = !!(navigator.mediaDevices && window.MediaRecorder);
+
   root.innerHTML = `
     ${errorBanner()}
     ${backLink()}
@@ -318,7 +334,10 @@ function screenQuestionLoop(state) {
     <hr class="divider"/>
 
     <div class="note-prompt-label">${esc(state.notePrompt)}</div>
-    <button class="mic-btn" disabled title="Voice notes coming soon">🎙️ Voice note (coming soon)</button>
+    ${voiceSupported ? `
+      <button class="mic-btn" id="mic-btn" type="button" ${state.awaitingContinue ? "disabled" : ""}>🎙️ Record voice note</button>
+      <div class="mic-status" id="mic-status"></div>
+    ` : ""}
     <textarea id="note-input" ${state.awaitingContinue ? "disabled" : ""}></textarea>
 
     ${state.awaitingContinue ? `
@@ -335,9 +354,16 @@ function screenQuestionLoop(state) {
     </div>
   `;
 
+  // Checkbox toggles round-trip to the server and re-render this whole
+  // screen from scratch — preserve whatever's currently in the notes box
+  // (typed or transcribed) across that re-render instead of losing it.
   root.querySelectorAll("input[type=checkbox]").forEach((cb) => {
-    cb.addEventListener("change", () => {
-      sendAction("toggle_check", { item: cb.dataset.item, checked: cb.checked });
+    cb.addEventListener("change", async () => {
+      const noteBox = document.getElementById("note-input");
+      const preserved = noteBox ? noteBox.value : "";
+      await sendAction("toggle_check", { item: cb.dataset.item, checked: cb.checked });
+      const newNoteBox = document.getElementById("note-input");
+      if (newNoteBox) newNoteBox.value = preserved;
     });
   });
 
@@ -347,11 +373,13 @@ function screenQuestionLoop(state) {
     });
   });
 
+  wireMicButton();
+
   const nextBtn = document.getElementById("next-btn");
   if (nextBtn) {
     nextBtn.onclick = () => {
       const note = document.getElementById("note-input").value;
-      sendAction("next", { note });
+      sendAction("next", { note, nativeNote: pendingNativeText });
     };
   }
 
@@ -360,6 +388,89 @@ function screenQuestionLoop(state) {
 
   document.getElementById("pause-btn").onclick = () => sendAction("pause");
   document.getElementById("stop-btn").onclick = () => sendAction("stop");
+}
+
+const MAX_RECORDING_MS = 28000; // Sarvam's sync endpoint caps at 30s
+
+function wireMicButton() {
+  const micBtn = document.getElementById("mic-btn");
+  const micStatus = document.getElementById("mic-status");
+  if (!micBtn) return;
+
+  micBtn.onclick = async () => {
+    if (activeRecorder && activeRecorder.state === "recording") {
+      activeRecorder.stop();
+      return;
+    }
+    await startRecording(micBtn, micStatus);
+  };
+}
+
+async function startRecording(micBtn, micStatus) {
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    micStatus.textContent = "Couldn't access the microphone. You can still type your note.";
+    return;
+  }
+
+  const chunks = [];
+  const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+  activeRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+  activeRecorder.addEventListener("dataavailable", (e) => {
+    if (e.data.size > 0) chunks.push(e.data);
+  });
+
+  activeRecorder.addEventListener("stop", async () => {
+    stream.getTracks().forEach((t) => t.stop());
+    clearTimeout(recordingTimer);
+    micBtn.textContent = "🎙️ Record voice note";
+    micBtn.classList.remove("recording");
+    micBtn.disabled = true;
+    micStatus.textContent = "Transcribing…";
+
+    const blobType = activeRecorder.mimeType || "audio/webm";
+    const blob = new Blob(chunks, { type: blobType });
+
+    try {
+      const res = await fetch(`/api/session/${currentState.sessionId}/transcribe`, {
+        method: "POST",
+        headers: { "Content-Type": blobType },
+        body: blob,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Transcription failed");
+
+      const noteBox = document.getElementById("note-input");
+      if (noteBox) {
+        const existing = noteBox.value.trim();
+        noteBox.value = existing ? `${existing} ${data.englishText}`.trim() : (data.englishText || "");
+      }
+      pendingNativeText = pendingNativeText
+        ? `${pendingNativeText} ${data.nativeText || ""}`.trim()
+        : (data.nativeText || "");
+
+      micStatus.textContent = data.englishText
+        ? "Added to your note below — feel free to edit it."
+        : "Didn't catch that clearly. Please try again or type your note.";
+    } catch (err) {
+      micStatus.textContent = "Couldn't transcribe that. Please try again or type your note.";
+    } finally {
+      micBtn.disabled = false;
+      activeRecorder = null;
+    }
+  });
+
+  activeRecorder.start();
+  micBtn.textContent = "⏹ Stop recording";
+  micBtn.classList.add("recording");
+  micStatus.textContent = "Listening… tap again to stop.";
+
+  recordingTimer = setTimeout(() => {
+    if (activeRecorder && activeRecorder.state === "recording") activeRecorder.stop();
+  }, MAX_RECORDING_MS);
 }
 
 function screenPause() {

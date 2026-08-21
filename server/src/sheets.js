@@ -14,6 +14,7 @@ const HEADER = [
   "answer",
   "response_source",
   "free_text",
+  "native_text",
   "completed_at",
   "session_duration_seconds",
   "session_duration_minutes",
@@ -72,7 +73,7 @@ async function ensureHeaderAndIndex() {
 
   const resp = await sheets.spreadsheets.values.get({
     spreadsheetId: id,
-    range: `${SHEET_NAME}!A1:M`,
+    range: `${SHEET_NAME}!A1:N`,
   });
 
   const rows = resp.data.values || [];
@@ -112,6 +113,7 @@ function buildRow(entry) {
     entry.answer,
     entry.response_source,
     entry.free_text,
+    entry.native_text ?? "",
     entry.completed_at,
     entry.session_duration_seconds ?? "",
     entry.session_duration_minutes ?? "",
