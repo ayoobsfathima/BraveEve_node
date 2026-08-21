@@ -577,3 +577,13 @@ input[type="range"].distress-slider::-moz-range-thumb {
   color: var(--muted);
   font-style: italic;
 }
+
+.summary-reassurance {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f4eaef;
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.5;
+  font-style: italic;
+}

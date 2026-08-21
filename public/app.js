@@ -495,7 +495,7 @@ function screenResume(state) {
   document.getElementById("continue-btn").onclick = () => sendAction("continue");
 }
 
-function summaryCard(summary) {
+function summaryCard(summary, name) {
   if (!summary) return "";
   const band = summary.scoreBand;
   const bandColor = band ? SCORE_BAND_COLORS[band.key] : "#999";
@@ -509,6 +509,7 @@ function summaryCard(summary) {
           ? `<ul class="summary-item-list">${s.items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`
           : `<div class="summary-empty">No concerns noted here today.</div>`
         }
+        
       </div>
     `;
   }).join("");
@@ -523,6 +524,7 @@ function summaryCard(summary) {
         ${summary.scoreReflection ? `<div class="summary-score-reflection">${esc(summary.scoreReflection)}</div>` : ""}
       ` : ""}
       <div class="summary-sections">${sectionsHtml}</div>
+      <div class="summary-reassurance">${esc(name)}, please don't get scared by the list of items. Most people face most of these in their everyday life. This is a small reminder that you matter, what you feel matter and most importantly you are not alone.</div>
     </div>
   `;
 }
@@ -534,7 +536,7 @@ function screenEnd(state) {
     ${card({ text: state.endMessage, mascot: "BraveEve_thank_you", side: "right", cardColor: "#fff8fb" })}
     <div class="mascot-center"><img src="${mascotSrc("heart_bubble")}" width="55" onerror="this.style.display='none'"/></div>
     ${state.showDistressAlert ? `<div class="alert-warning">${esc(state.distressAlert)}</div>` : ""}
-    ${summaryCard(state.summary)}
+    ${summaryCard(state.summary, state.name)}
     <hr class="divider"/>
     <div class="caption">${esc(state.disclaimer)}</div>
   `;
