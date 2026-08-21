@@ -1,17 +1,16 @@
 import { v4 as uuidv4 } from "uuid";
-import { getMessage } from "./dataLoader.js";
 import {
-  personalize,
-  pickRandom,
-  shuffled,
-  QUESTION_MASCOTS,
-  SECTION_INTROS,
-  NOTES_RESPONSE_YES,
-  NOTES_RESPONSE_NO,
-  NOTES_BOX_PROMPTS,
-  CLOSING_ACKNOWLEDGMENTS,
-} from "./content.js";
+  getMessage,
+  getNameAffirmations,
+  getContent,
+  displayForItem,
+  sectionDisplayLabel,
+  DEFAULT_LANGUAGE,
+  SUPPORTED_LANGUAGES,
+} from "./dataLoader.js";
+import { personalize, pickRandom, shuffled, QUESTION_MASCOTS } from "./content.js";
 import { classifyNote } from "./classify.js";
+import { processTypedNote } from "./typedNotePipeline.js";
 import { saveResponses } from "./sheets.js";
 
 // sessionId -> session object. In-memory store: fine for a ~30-person pilot.
@@ -31,7 +30,8 @@ export function createSession(appData) {
 
   const session = {
     sessionId,
-    step: 0,
+    step: -1, // -1 = language choice, the very first screen
+    language: DEFAULT_LANGUAGE,
     name: "",
     q2Phrase: "",
     dayFeeling: "",
@@ -42,8 +42,8 @@ export function createSession(appData) {
     scoreReply: "",
     sectionIndex: 0,
     sectionChecks: {},
-    sectionSummaries: {}, // sectionName -> array of checked item names, captured as each section finishes (for the end-of-session summary card)
-    notePromptOrder: shuffled(NOTES_BOX_PROMPTS),
+    sectionSummaries: {}, // sectionName -> array of canonical item keys, captured as each section finishes
+    notePromptOrder: [], // set once language is chosen (see case -1)
     awaitingContinue: false,
     pendingMessage: "",
     showDistressHelp: false,
@@ -80,7 +80,12 @@ function computeDuration(session) {
   };
 }
 
-/** Builds one response row, matching the columns written in chatbot.py */
+/**
+ * Builds one response row, matching the columns written in chatbot.py.
+ * category/problemItem are always the canonical ENGLISH identifiers,
+ * regardless of the session's display language — keeps the Sheet
+ * consistent and analyzable rather than fragmented by language.
+ */
 function makeEntry(session, { questionNumber, category, problemItem, answer, source, freeText, nativeText }) {
   const { seconds, minutes } = computeDuration(session);
   return {
@@ -94,19 +99,22 @@ function makeEntry(session, { questionNumber, category, problemItem, answer, sou
     answer,
     response_source: source,
     free_text: freeText || "",
-    native_text: nativeText || "", // spoken-language transcript, if this note came from voice
+    native_text: nativeText || "", // spoken/typed-native-language text, if applicable
     completed_at: fmtDateTime(new Date()),
     session_duration_seconds: seconds,
     session_duration_minutes: minutes,
   };
 }
 
+/** Snapshots which items are checked in the current section, keyed by the
+ * canonical English item key (not the display label) so the summary
+ * renders correctly regardless of which language was active when checked. */
 function captureSectionSummary(session, appData) {
   const sectionName = appData.sections[session.sectionIndex];
   const items = appData.sectionItems[sectionName];
   session.sectionSummaries[sectionName] = items
-    .filter((row) => !!session.sectionChecks[row.item])
-    .map((row) => row.item);
+    .filter((row) => !!session.sectionChecks[row.key])
+    .map((row) => row.key);
 }
 
 const MAX_HISTORY = 100;
@@ -131,11 +139,10 @@ async function persist(entries) {
 /**
  * Applies a user action to a session, mutating it, and (for step 7)
  * persisting response rows. Mirrors the big if/elif step machine in
- * chatbot.py.
+ * chatbot.py, extended with a language-choice step at the very front.
  */
 export async function applyAction(session, appData, action, payload = {}) {
-  const { staticMessages } = appData;
-  const msg = (key) => getMessage(appData, key);
+  const msg = (key) => getMessage(appData, key, session.language);
 
   // "Back" restores the session to exactly how it was right before the
   // previous action ran — including any answers/checks that were entered,
@@ -157,13 +164,23 @@ export async function applyAction(session, appData, action, payload = {}) {
   }
 
   switch (session.step) {
+    case -1: {
+      if (action === "set_language") {
+        const lang = SUPPORTED_LANGUAGES.includes(payload.lang) ? payload.lang : DEFAULT_LANGUAGE;
+        session.language = lang;
+        session.notePromptOrder = shuffled(getContent(appData, lang).notesBoxPrompts);
+        session.step = 0;
+      }
+      break;
+    }
+
     case 0: {
       if (action === "submit_name") {
         const name = (payload.name || "").trim();
         if (!name) return { error: "Name is required." };
         session.name = name;
         session.sessionStartTime = Date.now();
-        session.q2Phrase = pickRandom(appData.nameAffirmations);
+        session.q2Phrase = pickRandom(getNameAffirmations(appData, session.language));
         session.step = 1;
       }
       break;
@@ -288,23 +305,37 @@ export async function applyAction(session, appData, action, payload = {}) {
         const newEntries = [];
 
         for (const row of items) {
-          const isChecked = !!session.sectionChecks[row.item];
+          const isChecked = !!session.sectionChecks[row.key];
           newEntries.push(
             makeEntry(session, {
-              questionNumber: itemQuestionNumber[row.item],
+              questionNumber: itemQuestionNumber[row.key],
               category: row.category,
-              problemItem: row.item,
+              problemItem: row.key,
               answer: isChecked ? "YES" : "NO",
               source: "CHECKBOX",
             })
           );
         }
 
-        const noteText = (payload.note || "").trim();
-        const nativeNoteText = (payload.nativeNote || "").trim();
+        const rawNote = (payload.note || "").trim();
+        let nativeNoteText = (payload.nativeNote || "").trim();
+        let noteForClassification = rawNote;
+
+        // If this note didn't come from voice (voice already provides
+        // English + native text via Sarvam STT), run it through the typed
+        // note pipeline: detect language/script, transliterate romanized
+        // ("Kanglish") input to proper script if needed, then translate to
+        // English for the classifier. Runs off what was actually typed,
+        // independent of the session's display language.
+        if (rawNote !== "" && !nativeNoteText) {
+          const result = await processTypedNote(rawNote);
+          noteForClassification = result.englishText || rawNote;
+          nativeNoteText = result.nativeText;
+        }
+
         let prediction = "";
-        if (noteText !== "") {
-          const result = await classifyNote(noteText);
+        if (noteForClassification !== "") {
+          const result = await classifyNote(noteForClassification);
           prediction = result.prediction;
         }
 
@@ -314,19 +345,20 @@ export async function applyAction(session, appData, action, payload = {}) {
             category: sectionName,
             problemItem: "Section Notes",
             answer: prediction,
-            source: noteText !== "" ? "NLP" : "NONE",
-            freeText: noteText,
+            source: noteForClassification !== "" ? "NLP" : "NONE",
+            freeText: noteForClassification,
             nativeText: nativeNoteText,
           })
         );
 
         await persist(newEntries);
 
-        const noteGiven = noteText !== "";
+        const noteGiven = noteForClassification !== "";
         const predClean = String(prediction).trim().toLowerCase();
 
         if (noteGiven && (predClean === "yes" || predClean === "no")) {
-          const bank = predClean === "yes" ? NOTES_RESPONSE_YES : NOTES_RESPONSE_NO;
+          const content = getContent(appData, session.language);
+          const bank = predClean === "yes" ? content.notesResponseYes : content.notesResponseNo;
           session.pendingMessage = personalize(pickRandom(bank), session.name);
           session.awaitingContinue = true;
         } else {
@@ -380,11 +412,19 @@ export async function applyAction(session, appData, action, payload = {}) {
  */
 export function renderState(session, appData) {
   const { sections, sectionItems } = appData;
-  const msg = (key) => getMessage(appData, key);
+  const msg = (key) => getMessage(appData, key, session.language);
 
-  const base = { sessionId: session.sessionId, step: session.step, name: session.name };
+  const base = {
+    sessionId: session.sessionId,
+    step: session.step,
+    name: session.name,
+    language: session.language,
+  };
 
   switch (session.step) {
+    case -1:
+      return { ...base, screen: "language_choice" };
+
     case 0:
       return { ...base, screen: "name", message: msg("ASK_NAME") };
 
@@ -447,36 +487,43 @@ export function renderState(session, appData) {
 
     case 7: {
       const sectionName = sections[Math.min(session.sectionIndex, sections.length - 1)];
-      const items = (sectionItems[sectionName] || []).map((row) => ({
-        item: row.item,
-        question: personalize(row.question, session.name),
-        verbatim: personalize(row.verbatim, session.name),
-        affirmation: personalize(row.yes, session.name),
-        checked: !!session.sectionChecks[row.item],
-      }));
+      const items = (sectionItems[sectionName] || []).map((row) => {
+        const display = displayForItem(row, session.language);
+        return {
+          key: row.key, // canonical English identifier — used for toggle_check payloads
+          item: personalize(display.item, session.name), // display label
+          question: personalize(display.question, session.name),
+          verbatim: personalize(display.verbatim, session.name),
+          affirmation: personalize(display.yes, session.name),
+          checked: !!session.sectionChecks[row.key],
+        };
+      });
 
       let sectionMascot = null;
       for (const row of sectionItems[sectionName] || []) {
-        if (QUESTION_MASCOTS[row.item]) {
-          sectionMascot = QUESTION_MASCOTS[row.item];
+        if (QUESTION_MASCOTS[row.key]) {
+          sectionMascot = QUESTION_MASCOTS[row.key];
           break;
         }
       }
 
+      const content = getContent(appData, session.language);
       const introText = personalize(
-        session.sectionIndex < SECTION_INTROS.length
-          ? SECTION_INTROS[session.sectionIndex]
+        session.sectionIndex < content.sectionIntros.length
+          ? content.sectionIntros[session.sectionIndex]
           : "Have you had concerns about any of these, in the past week including today?",
         session.name
       );
 
       const notePrompt =
-        session.notePromptOrder[session.sectionIndex % session.notePromptOrder.length];
+        session.notePromptOrder.length > 0
+          ? session.notePromptOrder[session.sectionIndex % session.notePromptOrder.length]
+          : content.notesBoxPrompts[session.sectionIndex % content.notesBoxPrompts.length];
 
       return {
         ...base,
         screen: "question_loop",
-        sectionName,
+        sectionName: sectionDisplayLabel(appData, sectionName, session.language),
         sectionMascot,
         sectionIndex: session.sectionIndex,
         totalSections: sections.length,
@@ -497,15 +544,19 @@ export function renderState(session, appData) {
       return { ...base, screen: "resume", text: session.resumeText };
 
     case 999: {
+      const content = getContent(appData, session.language);
       if (!session.closingAcknowledgment) {
-        session.closingAcknowledgment = personalize(pickRandom(CLOSING_ACKNOWLEDGMENTS), session.name);
+        session.closingAcknowledgment = personalize(pickRandom(content.closingAcknowledgments), session.name);
         session.endMessage = personalize(pickRandom([msg("END_MESSAGE"), msg("END_MESSAGE_2")]), session.name);
       }
 
-      const summarySections = sections.map((name) => ({
-        name,
-        items: session.sectionSummaries[name] || [],
-      }));
+      const summarySections = sections.map((sectionName) => {
+        const keys = session.sectionSummaries[sectionName] || [];
+        const items = (sectionItems[sectionName] || [])
+          .filter((row) => keys.includes(row.key))
+          .map((row) => displayForItem(row, session.language).item);
+        return { name: sectionDisplayLabel(appData, sectionName, session.language), items };
+      });
 
       return {
         ...base,
