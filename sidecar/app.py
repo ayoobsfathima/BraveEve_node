@@ -1,10 +1,15 @@
 """
 BraveEve NLP sidecar.
 
-Loads the existing trained classifier (sentiment_model.pkl, a scikit-learn
-SVC trained on sentence-transformers embeddings) and exposes it over a tiny
-HTTP API so the Node/Express app can call it. This is the *only* Python
-piece left in the stack — everything else has moved to Node.
+Loads the trained classifier (sentiment_model.pkl, a scikit-learn Pipeline
+combining a TfidfVectorizer + LogisticRegression) and exposes it over a
+tiny HTTP API so the Node/Express app can call it.
+
+This is a TF-IDF pipeline, not an embeddings model — no PyTorch or
+sentence-transformers dependency, which keeps this comfortably within
+free/low-tier hosting memory limits (unlike the earlier
+sentence-transformers-based version, which needed the full PyTorch
+runtime just to embed text).
 
 Run with:
     pip install -r requirements.txt
@@ -14,20 +19,14 @@ Run with:
 import os
 import joblib
 from flask import Flask, request, jsonify
-from sentence_transformers import SentenceTransformer
 
 MODEL_PATH = os.environ.get("SENTIMENT_MODEL_PATH", "sentiment_model.pkl")
-ENCODER_NAME = os.environ.get("ENCODER_NAME", "sentence-transformers/all-MiniLM-L6-v2")
 PORT = int(os.environ.get("SIDECAR_PORT", "5001"))
 
 app = Flask(__name__)
 
-print(f"[sidecar] loading classifier from {MODEL_PATH} ...")
-classifier = joblib.load(MODEL_PATH)
-
-print(f"[sidecar] loading sentence encoder {ENCODER_NAME} ...")
-encoder = SentenceTransformer(ENCODER_NAME)
-
+print(f"[sidecar] loading model pipeline from {MODEL_PATH} ...")
+pipeline = joblib.load(MODEL_PATH)
 print("[sidecar] ready.")
 
 
@@ -44,10 +43,17 @@ def classify():
     if not text:
         return jsonify({"label": "", "note": "empty text"}), 200
 
-    embedding = encoder.encode([text])
-    label = classifier.predict(embedding)[0]
+    label = pipeline.predict([text])[0]
 
-    return jsonify({"label": str(label)})
+    response = {"label": str(label)}
+
+    # Include confidence if the pipeline supports it (LogisticRegression does)
+    if hasattr(pipeline, "predict_proba"):
+        classes = pipeline.named_steps["classifier"].classes_
+        probs = pipeline.predict_proba([text])[0]
+        response["confidence"] = dict(zip((str(c) for c in classes), (round(float(p), 4) for p in probs)))
+
+    return jsonify(response)
 
 
 if __name__ == "__main__":
