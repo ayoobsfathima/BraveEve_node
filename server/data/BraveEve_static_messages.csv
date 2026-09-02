@@ -26,3 +26,6 @@ END_MESSAGE,"Thank you for spending this time with me today, [Name]."
 END_MESSAGE_2,"I appreciate you sharing your thoughts and feelings with me today, [Name]. Thank you for your openness."
 DISTRESS_ALERT,"Based on the distress score you shared earlier, it looks like things are a little difficult right now. If you would like extra support, you may talk with your doctor, nurse, counsellor, or another member of your healthcare team. "
 DISCLAIMER,This conversation is designed to support check-ins and reflection. It is not a substitute for medical advice or emergency care.
+DAY_FEELING_OPTION_GOOD,It's been good
+DAY_FEELING_OPTION_DIFFICULT,It's been a little difficult
+DAY_FEELING_OPTION_OKAY,I'm just okay

@@ -251,7 +251,7 @@ function screenDayFeeling(state) {
     <p>${esc(state.message)}</p>
     <div class="radio-group" id="day-options">
       ${state.options.map((o, i) => `
-        <label><input type="radio" name="day" value="${esc(o)}" ${i === 0 ? "checked" : ""}/> ${esc(o)}</label>
+        <label><input type="radio" name="day" value="${esc(o.value)}" ${i === 0 ? "checked" : ""}/> ${esc(o.label)}</label>
       `).join("")}
     </div>
     <div class="btn-row"><button class="pill" id="continue-btn">${esc(t("continue"))}</button></div>

@@ -440,7 +440,11 @@ export function renderState(session, appData) {
         ...base,
         screen: "day_feeling",
         message: msg("ASK_DAY_FEELING"),
-        options: ["It's been good", "It's been a little difficult", "I'm just okay"],
+        options: [
+          { value: "It's been good", label: msg("DAY_FEELING_OPTION_GOOD") },
+          { value: "It's been a little difficult", label: msg("DAY_FEELING_OPTION_DIFFICULT") },
+          { value: "I'm just okay", label: msg("DAY_FEELING_OPTION_OKAY") },
+        ],
       };
 
     case 21:
