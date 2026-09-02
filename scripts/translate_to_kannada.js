@@ -50,7 +50,7 @@ if (!API_KEY) {
 const SOURCE_LANG = "en-IN";
 const TARGET_LANG = "kn-IN";
 const MODEL = "mayura:v1";
-const MODE = "classic-colloquial"; // try "modern-colloquial" too and compare
+const MODE = "formal"; // confirmed: fixes code-mixing that both colloquial modes produced
 const NUMERALS_FORMAT = "international";
 const DELAY_MS = 250; // be gentle on rate limits across ~150+ calls
 
@@ -74,12 +74,14 @@ function saveCache(cache) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function translateOne(text, cache, { retries = 3 } = {}) {
-  const trimmed = (text || "").trim();
-  if (trimmed === "" || trimmed.toLowerCase() === "nan") return text || "";
+// True if a string fragment has no actual letters worth translating (just
+// punctuation/whitespace left over after splitting around [Name]) — no
+// point spending an API call on a lone period or comma.
+function hasTranslatableContent(s) {
+  return /[a-zA-Z\u0900-\u0DFF]/.test(s);
+}
 
-  if (cache[trimmed]) return cache[trimmed];
-
+async function callSarvamTranslate(text, retries) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const res = await fetch("https://api.sarvam.ai/translate", {
@@ -89,7 +91,7 @@ async function translateOne(text, cache, { retries = 3 } = {}) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          input: trimmed,
+          input: text,
           source_language_code: SOURCE_LANG,
           target_language_code: TARGET_LANG,
           model: MODEL,
@@ -104,15 +106,44 @@ async function translateOne(text, cache, { retries = 3 } = {}) {
       }
 
       const data = await res.json();
-      const translated = data.translated_text;
-      cache[trimmed] = translated;
-      return translated;
+      return data.translated_text;
     } catch (err) {
-      console.warn(`  [attempt ${attempt}/${retries}] failed for "${trimmed.slice(0, 40)}...": ${err.message}`);
+      console.warn(`  [attempt ${attempt}/${retries}] failed for "${text.slice(0, 40)}...": ${err.message}`);
       if (attempt === retries) throw err;
       await sleep(1000 * attempt);
     }
   }
+}
+
+async function translateOne(text, cache, { retries = 3 } = {}) {
+  const trimmed = (text || "").trim();
+  if (trimmed === "" || trimmed.toLowerCase() === "nan") return text || "";
+
+  // Protect the [Name] placeholder: never send it to the translation API.
+  // Sarvam sometimes translates its contents (e.g. "[Name]" -> "[ಹೆಸರು]",
+  // the Kannada word for "name") instead of leaving it as a literal token —
+  // which silently breaks the app's personalization, since it does an
+  // exact string-replace on "[Name]". Splitting the string around the
+  // placeholder and translating only the surrounding fragments guarantees
+  // it survives untouched, since the model never sees it at all.
+  if (trimmed.includes("[Name]")) {
+    const segments = trimmed.split("[Name]");
+    const translatedSegments = [];
+    for (const segment of segments) {
+      if (!hasTranslatableContent(segment)) {
+        translatedSegments.push(segment); // pure punctuation/whitespace, or empty
+      } else {
+        translatedSegments.push(await translateOne(segment, cache, { retries }));
+      }
+    }
+    return translatedSegments.join("[Name]");
+  }
+
+  if (cache[trimmed]) return cache[trimmed];
+
+  const translated = await callSarvamTranslate(trimmed, retries);
+  cache[trimmed] = translated;
+  return translated;
 }
 
 async function translateColumn(rows, column, cache, label) {
@@ -151,6 +182,12 @@ async function main() {
   saveCache(cache);
 
   // --- 3. variables (question bank): translate every column, same row order ---
+  // NOTE: "No" is deliberately skipped — confirmed unused anywhere in the
+  // running app (state.js only ever reads the "Yes" affirmation, never
+  // "No"). Kept structurally present in the output (untranslated, passed
+  // through as-is) rather than dropped, so the file shape stays predictable
+  // and it's still there — just not yet translated — if a future feature
+  // ever wires it up.
   console.log("Translating BraveEve_variables.csv ...");
   const varColumns = [
     "Category",
@@ -160,8 +197,9 @@ async function main() {
     "Yes",
     "No",
   ];
+  const columnsToTranslate = varColumns.filter((c) => c !== "No");
   const varRows = readCsv("BraveEve_variables.csv");
-  for (const col of varColumns) {
+  for (const col of columnsToTranslate) {
     await translateColumn(varRows, col, cache, `variables:${col}`);
     saveCache(cache); // checkpoint after each column, not just each file
   }
