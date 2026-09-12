@@ -26,7 +26,8 @@ function requireSession(req, res, next) {
 }
 
 app.post("/api/session/start", (req, res) => {
-  const session = createSession(appData);
+  const patientId = String(req.query.pid || "").trim();
+  const session = createSession(appData, patientId);
   res.json(renderState(session, appData));
 });
 

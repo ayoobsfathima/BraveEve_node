@@ -112,8 +112,9 @@ function t(key, ...args) {
 // networking
 // ---------------------------------------------------------------------
 
-async function startSession() {
-  const res = await fetch("/api/session/start", { method: "POST" });
+async function startSession(pid) {
+  const url = pid ? `/api/session/start?pid=${encodeURIComponent(pid)}` : "/api/session/start";
+  const res = await fetch(url, { method: "POST" });
   const state = await res.json();
   localStorage.setItem("braveeve_session_id", state.sessionId);
   return state;
@@ -696,9 +697,16 @@ function render(state) {
 
 (async function init() {
   root.innerHTML = `<p>Loading...</p>`;
-  const savedId = localStorage.getItem("braveeve_session_id");
-  let state = savedId ? await resumeSession(savedId) : null;
-  if (!state) state = await startSession();
+  const pidFromUrl = new URLSearchParams(window.location.search).get("pid");
+
+  let state = null;
+  if (pidFromUrl) {
+    state = await startSession(pidFromUrl);
+  } else {
+    const savedId = localStorage.getItem("braveeve_session_id");
+    state = savedId ? await resumeSession(savedId) : null;
+    if (!state) state = await startSession();
+  }
   currentState = state;
   render(state);
 })();
