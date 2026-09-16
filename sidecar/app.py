@@ -19,6 +19,7 @@ Run with:
 import os
 import joblib
 from flask import Flask, request, jsonify
+from negation_utils import negate_text
 
 MODEL_PATH = os.environ.get("SENTIMENT_MODEL_PATH", "sentiment_model.pkl")
 PORT = int(os.environ.get("SIDECAR_PORT", "5001"))
@@ -43,15 +44,17 @@ def classify():
     if not text:
         return jsonify({"label": "", "note": "empty text"}), 200
 
-    label = pipeline.predict([text])[0]
+    tagged_text = negate_text(text)
+    label = pipeline.predict([tagged_text])[0]
 
     response = {"label": str(label)}
 
     # Include confidence if the pipeline supports it (LogisticRegression does)
     if hasattr(pipeline, "predict_proba"):
         classes = pipeline.named_steps["classifier"].classes_
-        probs = pipeline.predict_proba([text])[0]
+        probs = pipeline.predict_proba([tagged_text])[0]
         response["confidence"] = dict(zip((str(c) for c in classes), (round(float(p), 4) for p in probs)))
+
 
     return jsonify(response)
 
