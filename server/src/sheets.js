@@ -5,6 +5,7 @@ const SHEET_NAME = process.env.GOOGLE_SHEET_TAB || "responses";
 // Column order — keep in sync with HEADER below and with buildRow().
 const HEADER = [
   "session_id",
+  "patient_id",
   "timestamp",
   "name",
   "distress_score",
@@ -73,7 +74,7 @@ async function ensureHeaderAndIndex() {
 
   const resp = await sheets.spreadsheets.values.get({
     spreadsheetId: id,
-    range: `${SHEET_NAME}!A1:N`,
+    range: `${SHEET_NAME}!A1:O`,
   });
 
   const rows = resp.data.values || [];
@@ -92,7 +93,7 @@ async function ensureHeaderAndIndex() {
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       const sessionId = row[0];
-      const questionNumber = row[4];
+      const questionNumber = row[5];
       if (sessionId === undefined || questionNumber === undefined) continue;
       rowIndex.set(`${sessionId}|${questionNumber}`, i + 1); // 1-based sheet row
     }
@@ -104,6 +105,7 @@ async function ensureHeaderAndIndex() {
 function buildRow(entry) {
   return [
     entry.session_id,
+    entry.patient_id ?? "",
     entry.timestamp,
     entry.name,
     entry.distress_score ?? "",

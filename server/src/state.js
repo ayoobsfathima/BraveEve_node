@@ -25,11 +25,12 @@ function fmtDateTime(d) {
   );
 }
 
-export function createSession(appData) {
+export function createSession(appData, patientId = "") {
   const sessionId = `${fmtDateTime(new Date()).slice(0, 10).replace(/-/g, "")}_${uuidv4().slice(0, 6)}`;
 
   const session = {
     sessionId,
+    patientId, // from the personalized QR link (?pid=...), links this session back to the study's patient record. "" if opened without one (e.g. internal testing).
     step: -1, // -1 = language choice, the very first screen
     language: DEFAULT_LANGUAGE,
     name: "",
@@ -90,6 +91,7 @@ function makeEntry(session, { questionNumber, category, problemItem, answer, sou
   const { seconds, minutes } = computeDuration(session);
   return {
     session_id: session.sessionId,
+    patient_id: session.patientId || "",
     timestamp: fmtDateTime(new Date()),
     name: session.name,
     distress_score: session.distressScore,
