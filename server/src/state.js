@@ -108,6 +108,25 @@ function makeEntry(session, { questionNumber, category, problemItem, answer, sou
   };
 }
 
+/**
+ * Writes a single sentinel row marking that this session reached its end
+ * (either by finishing every section, or by the patient pressing "stop").
+ * question_number -1 never collides with a real question number, so the
+ * dashboard's completion poller can look for this one distinctive row
+ * per session_id/patient_id rather than inferring completion from the
+ * ordinary per-question rows.
+ */
+function persistCompletionMarker(session, status) {
+  const entry = makeEntry(session, {
+    questionNumber: -1,
+    category: "META",
+    problemItem: "SESSION_STATUS",
+    answer: status, // "COMPLETED" | "STOPPED_EARLY"
+    source: "SYSTEM",
+  });
+  return persist([entry]);
+}
+
 /** Snapshots which items are checked in the current section, keyed by the
  * canonical English item key (not the display label) so the summary
  * renders correctly regardless of which language was active when checked. */
@@ -268,7 +287,10 @@ export async function applyAction(session, appData, action, payload = {}) {
         session.pauseStartTime = Date.now();
         session.step = 888;
       }
-      if (action === "stop") session.step = 999;
+      if (action === "stop") {
+        session.step = 999;
+        await persistCompletionMarker(session, "STOPPED_EARLY");
+      }
       break;
     }
 
@@ -288,6 +310,7 @@ export async function applyAction(session, appData, action, payload = {}) {
       if (action === "stop") {
         captureSectionSummary(session, appData);
         session.step = 999;
+        await persistCompletionMarker(session, "STOPPED_EARLY");
         break;
       }
 
@@ -297,7 +320,10 @@ export async function applyAction(session, appData, action, payload = {}) {
         session.pendingMessage = "";
         session.sectionChecks = {};
         session.sectionIndex += 1;
-        if (session.sectionIndex >= sections.length) session.step = 999;
+        if (session.sectionIndex >= sections.length) {
+          session.step = 999;
+          await persistCompletionMarker(session, "COMPLETED");
+        }
         break;
       }
 
@@ -367,7 +393,10 @@ export async function applyAction(session, appData, action, payload = {}) {
           captureSectionSummary(session, appData);
           session.sectionChecks = {};
           session.sectionIndex += 1;
-          if (session.sectionIndex >= sections.length) session.step = 999;
+          if (session.sectionIndex >= sections.length) {
+            session.step = 999;
+            await persistCompletionMarker(session, "COMPLETED");
+          }
         }
       }
       break;
@@ -388,6 +417,7 @@ export async function applyAction(session, appData, action, payload = {}) {
           session.pauseStartTime = null;
         }
         session.step = 999;
+        await persistCompletionMarker(session, "STOPPED_EARLY");
       }
       break;
     }
