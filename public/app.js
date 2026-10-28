@@ -42,6 +42,7 @@ const UI_STRINGS = {
     pause: "Pause",
     stop: "Stop",
     resume: "Resume",
+    pauseStopHelp: "Pause lets you take a break and continue when you are ready. Stop ends this check-in.",
     yourNamePlaceholder: "Your name",
     noDistress: "No distress",
     extremeDistress: "Extreme distress",
@@ -76,6 +77,7 @@ const UI_STRINGS = {
     pause: "ವಿರಾಮ",
     stop: "ನಿಲ್ಲಿಸಿ",
     resume: "ಮುಂದುವರಿಸಿ",
+    pauseStopHelp: "ವಿರಾಮ: ವಿಶ್ರಾಂತಿ ತೆಗೆದುಕೊಂಡು ನೀವು ಸಿದ್ಧರಾದಾಗ ಮುಂದುವರಿಸಬಹುದು. ನಿಲ್ಲಿಸಿ: ಈ ಪರಿಶೀಲನೆಯನ್ನು ಮುಕ್ತಾಯಗೊಳಿಸುತ್ತದೆ.",
     yourNamePlaceholder: "ನಿಮ್ಮ ಹೆಸರು",
     noDistress: "ಯಾವುದೇ ತೊಂದರೆ ಇಲ್ಲ",
     extremeDistress: "ತೀವ್ರ ತೊಂದರೆ",
@@ -378,6 +380,7 @@ function screenQuestionTransition(state) {
     ${errorBanner()}
     ${backLink()}
     ${card({ text: state.text, mascot: "BraveEve_few_questions", side: "right", cardColor: "#faf6ff" })}
+    <p class="caption" style="text-align:center;font-size:15px;color:#5a4a55;line-height:1.5">${esc(t("pauseStopHelp"))}</p>
     <div class="btn-row three">
       <button class="pill" id="begin-btn">${esc(t("begin"))}</button>
       <button class="pill secondary" id="pause-btn">${esc(t("pause"))}</button>
