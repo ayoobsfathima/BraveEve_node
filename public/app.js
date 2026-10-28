@@ -42,7 +42,8 @@ const UI_STRINGS = {
     pause: "Pause",
     stop: "Stop",
     resume: "Resume",
-    pauseStopHelp: "Pause lets you take a break and continue when you are ready. Stop ends this check-in.",
+    pauseHelp: "Lets you take a break and continue whenever you're ready.",
+    stopHelp: "Ends the session. Choose this if you find it difficult to continue.",
     yourNamePlaceholder: "Your name",
     noDistress: "No distress",
     extremeDistress: "Extreme distress",
@@ -77,7 +78,8 @@ const UI_STRINGS = {
     pause: "ವಿರಾಮ",
     stop: "ನಿಲ್ಲಿಸಿ",
     resume: "ಮುಂದುವರಿಸಿ",
-    pauseStopHelp: "ವಿರಾಮ: ವಿಶ್ರಾಂತಿ ತೆಗೆದುಕೊಂಡು ನೀವು ಸಿದ್ಧರಾದಾಗ ಮುಂದುವರಿಸಬಹುದು. ನಿಲ್ಲಿಸಿ: ಈ ಪರಿಶೀಲನೆಯನ್ನು ಮುಕ್ತಾಯಗೊಳಿಸುತ್ತದೆ.",
+    pauseHelp: "ನೀವು ಸಿದ್ಧರಾದಾಗಲೆಲ್ಲ ವಿಶ್ರಾಂತಿ ತೆಗೆದುಕೊಂಡು ಮುಂದುವರಿಸಲು ಅವಕಾಶ ನೀಡುತ್ತದೆ.",
+    stopHelp: "ಈ ಪರಿಶೀಲನೆಯನ್ನು ಮುಕ್ತಾಯಗೊಳಿಸುತ್ತದೆ. ಮುಂದುವರಿಸುವುದು ಕಷ್ಟವೆನಿಸಿದರೆ ಇದನ್ನು ಆಯ್ಕೆಮಾಡಿ.",
     yourNamePlaceholder: "ನಿಮ್ಮ ಹೆಸರು",
     noDistress: "ಯಾವುದೇ ತೊಂದರೆ ಇಲ್ಲ",
     extremeDistress: "ತೀವ್ರ ತೊಂದರೆ",
@@ -380,7 +382,10 @@ function screenQuestionTransition(state) {
     ${errorBanner()}
     ${backLink()}
     ${card({ text: state.text, mascot: "BraveEve_few_questions", side: "right", cardColor: "#faf6ff" })}
-    <p class="caption" style="text-align:center;font-size:15px;color:#5a4a55;line-height:1.5">${esc(t("pauseStopHelp"))}</p>
+    <div class="pause-stop-help" style="font-size:15px;color:#5a4a55;line-height:1.5;margin:4px 4px 14px">
+      <p style="margin:0 0 6px"><strong>${esc(t("pause"))}</strong> – ${esc(t("pauseHelp"))}</p>
+      <p style="margin:0"><strong>${esc(t("stop"))}</strong> – ${esc(t("stopHelp"))}</p>
+    </div>
     <div class="btn-row three">
       <button class="pill" id="begin-btn">${esc(t("begin"))}</button>
       <button class="pill secondary" id="pause-btn">${esc(t("pause"))}</button>
